@@ -36,18 +36,6 @@ export class AppController {
       // 文件必须先经过编码转换
       const processedBuffer = processBinaryData(file.buffer);
       
-      // 打印处理后的文件内容
-      console.log('Processed buffer length:', processedBuffer.byteLength);
-      console.log('Processed buffer (first 100 bytes):', new Uint8Array(processedBuffer.slice(0, 100)));
-      
-      // 如果需要查看文本内容，可以尝试解码
-      try {
-        const textContent = Buffer.from(processedBuffer).toString('utf8');
-        console.log('Processed text content (first 200 chars):', textContent);
-      } catch (decodeError) {
-        console.log('Cannot decode as text:', (decodeError as Error).message);
-      }
-      
       const uint8 = new Uint8Array(processedBuffer);
       const result = await this.workerService.runInWorker<{data?: Record<string, any>, message?: string}>(
         './workers/occt.worker.js',
@@ -57,6 +45,7 @@ export class AppController {
     } catch (error) {
       console.error('Error reading STEP file:', error);
       throw new Error('Failed to read STEP file', error as any);
+      
     }
   }
 }

@@ -11,7 +11,10 @@ export class WorkerService {
         workerData: data,
       });
 
-      worker.on('message', resolve);
+      worker.on('message', (message) => {
+        console.log('result', message)
+        resolve(message);
+      });
       worker.on('error', reject);
       worker.on('exit', (code) => {
         if (code !== 0) {
