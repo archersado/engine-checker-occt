@@ -1,12 +1,13 @@
-import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Inject } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AppService } from './app.service';
-import occtImport from 'occt-import-js';
 import * as encoding from 'encoding';
+import { WorkerService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly workerService: WorkerService,
+  ) {}
 
   @Post('/occt')
   @UseInterceptors(FileInterceptor('file'))
@@ -44,15 +45,18 @@ export class AppController {
         const textContent = Buffer.from(processedBuffer).toString('utf8');
         console.log('Processed text content (first 200 chars):', textContent);
       } catch (decodeError) {
-        console.log('Cannot decode as text:', decodeError.message);
+        console.log('Cannot decode as text:', (decodeError as Error).message);
       }
       
-      const occt = await occtImport();
-      let result = occt.ReadStepFile(new Uint8Array(processedBuffer), null);
+      const uint8 = new Uint8Array(processedBuffer);
+      const result = await this.workerService.runInWorker<{data?: Record<string, any>, message?: string}>(
+        './workers/occt.worker.js',
+        { data: uint8 },
+      );
       return result;
     } catch (error) {
       console.error('Error reading STEP file:', error);
-      throw new Error('Failed to read STEP file', error);
+      throw new Error('Failed to read STEP file', error as any);
     }
   }
 }
