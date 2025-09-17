@@ -72,7 +72,9 @@ export class WorkerService {
     };
 
     this.queue.push(task);
-    this.processQueue();
+    setImmediate(() => {
+      this.processQueue();
+    })
 
     return taskId;
   }
