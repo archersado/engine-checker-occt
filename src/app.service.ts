@@ -38,6 +38,12 @@ export class WorkerService {
     const task = async () => {
       const worker = new Worker(join(__dirname, workerPath), {
         workerData: data,
+          resourceLimits: {
+            maxOldGenerationSizeMb: 1024, // 老生代内存限制1GB
+            maxYoungGenerationSizeMb: 128, // 新生代内存限制128MB
+            codeRangeSizeMb: 128,          // 代码段内存限制64MB
+            stackSizeMb: 128               // 调用栈大小4MB
+          }
       });
 
       worker.on('message', (message) => {
