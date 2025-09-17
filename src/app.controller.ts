@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Inject } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Get, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as encoding from 'encoding';
 import { WorkerService } from './app.service';
@@ -11,7 +11,7 @@ export class AppController {
 
   @Post('/occt')
   @UseInterceptors(FileInterceptor('file'))
-  async occt(@UploadedFile() file: Express.Multer.File): Promise<{data?: Record<string, any>, message?: string}> {
+  async occt(@UploadedFile() file: Express.Multer.File): Promise<{ taskId: string }> {
     if (!file) {
       throw new Error('No file uploaded');
     }
@@ -31,21 +31,28 @@ export class AppController {
         throw error; // 抛出错误让上层处理
       }
     };
-    
-    try {
-      // 文件必须先经过编码转换
-      const processedBuffer = processBinaryData(file.buffer);
-      
-      const uint8 = new Uint8Array(processedBuffer);
-      const result = await this.workerService.runInWorker<{data?: Record<string, any>, message?: string}>(
-        './workers/occt.worker.js',
-        { data: uint8 },
-      );
-      return result;
-    } catch (error) {
-      console.error('Error reading STEP file:', error);
-      throw new Error('Failed to read STEP file', error as any);
-      
+
+    // 文件必须先经过编码转换
+    const processedBuffer = processBinaryData(file.buffer);
+    const uint8 = new Uint8Array(processedBuffer);
+    const taskId = await this.workerService.runInWorker(
+      './workers/occt.worker.js',
+      { data: uint8 },
+    );
+    return { taskId };
+  }
+
+  @Get('/occt/status')
+  getTaskStatus(@Query('taskId') taskId: string): { status: 'pending' | 'completed'; result?: any } {
+    if (!taskId) {
+      throw new Error('Task ID is required');
     }
+
+    const taskResult = this.workerService.getTaskResult(taskId);
+    if (!taskResult) {
+      throw new Error('Task not found');
+    }
+
+    return taskResult;
   }
 }
