@@ -10,8 +10,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:debug": "nest start --max-old-space-size=4096 --debug --watch",
+    "start:prod": "node --max-old-space-size=4096  dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -23,13 +23,16 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "axios": "^1.12.2",
     "encoding": "^0.1.13",
+    "form-data": "^4.0.4",
     "iconv": "^3.0.1",
     "iconv-lite": "^0.7.0",
     "lru-cache": "^11.2.1",
     "occt-import-js": "^0.0.23",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
