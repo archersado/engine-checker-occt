@@ -54,16 +54,16 @@ export class WorkerService {
       }
 
       const args = [filePath, `{"linearUnit":"millimeter","linearDeflection":${linearDeflection},"angularDeflection":${angularDeflection}}`]; // 如果需要传递参数，可以在这里添加
-      const process = spawn(cliPath, args);
+      const child_process = spawn(cliPath, args);
       
-      process.stdout.on('data', (data) => {
+      child_process.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });
-      process.stderr.on('data', (data) => {
+      child_process.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
       });
 
-      process.on('close', async (code) => {
+      child_process.on('close', async (code) => {
         try {
           const resultFilePath = path.join(__dirname, '../result.json');
 
@@ -93,16 +93,17 @@ export class WorkerService {
             this.taskMap.delete(taskId);
           }
         } catch (error) {
-          this.taskMap.set(taskId, { status: 'completed', result: { error: error.message } });
+          this.taskMap.delete(taskId);
           console.error(`任务执行出错: ${taskId}, 错误: ${error.message}`);
         } finally {
+          this.taskMap.delete(taskId);
           this.currentRunningTasks--;
           this.processQueue();
         }
       });
 
-      process.on('error', (error) => {
-        this.taskMap.set(taskId, { status: 'completed', result: { error: error.message } });
+      child_process.on('error', (error) => {
+        this.taskMap.delete(taskId);
         console.error(`任务执行出错: ${taskId}, 错误: ${error.message}`);
         this.currentRunningTasks--;
         this.processQueue();
