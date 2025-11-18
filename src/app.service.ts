@@ -43,27 +43,27 @@ export class WorkerService {
       const cliPath = process.env.CLI_PATH || '/Users/archersado/workspace/mygit/occt-import-js/build/native/Release/OcctImportJSExample';
       let linearDeflection = 0.1;
       let angularDeflection = 0.05;
-      if (fileSize > 1024 * 1024 * 50) { // 如果文件大于1MB
+      if (fileSize > 1024 * 1024 * 50) { // 如果文件大于50MB
         linearDeflection = 0.2;
         angularDeflection = 0.05;
       }
 
-      if (fileSize > 1024 * 1024 * 100) { // 如果文件大于1MB
+      if (fileSize > 1024 * 1024 * 100) { // 如果文件大于100MB
         linearDeflection = 0.2;
         angularDeflection = 0.5;
       }
 
       const args = [filePath, `{"linearUnit":"millimeter","linearDeflection":${linearDeflection},"angularDeflection":${angularDeflection}}`]; // 如果需要传递参数，可以在这里添加
-      const child_process = spawn(cliPath, args);
+      const childProcess = spawn(cliPath, args);
       
-      child_process.stdout.on('data', (data) => {
+      childProcess.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });
-      child_process.stderr.on('data', (data) => {
+      childProcess.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
       });
 
-      child_process.on('close', async (code) => {
+      childProcess.on('close', async (code) => {
         try {
           const resultFilePath = path.join(__dirname, '../result.json');
 
@@ -93,17 +93,16 @@ export class WorkerService {
             this.taskMap.delete(taskId);
           }
         } catch (error) {
-          this.taskMap.delete(taskId);
+          this.taskMap.set(taskId, { status: 'completed', result: { error: error.message } });
           console.error(`任务执行出错: ${taskId}, 错误: ${error.message}`);
         } finally {
-          this.taskMap.delete(taskId);
           this.currentRunningTasks--;
           this.processQueue();
         }
       });
 
-      child_process.on('error', (error) => {
-        this.taskMap.delete(taskId);
+      childProcess.on('error', (error) => {
+        this.taskMap.set(taskId, { status: 'completed', result: { error: error.message } });
         console.error(`任务执行出错: ${taskId}, 错误: ${error.message}`);
         this.currentRunningTasks--;
         this.processQueue();
