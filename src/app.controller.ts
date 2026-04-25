@@ -2,6 +2,9 @@ import { Controller, Post, UploadedFile, UseInterceptors, Get, Query } from '@ne
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as encoding from 'encoding';
 import { WorkerService } from './app.service';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
 
 @Controller()
 export class AppController {
@@ -11,10 +14,16 @@ export class AppController {
 
   @Post('/occt')
   @UseInterceptors(FileInterceptor('file'))
-  async occt(@UploadedFile() file: Express.Multer.File): Promise<{ taskId: string }> {
+  async occt(@UploadedFile() file: Express.Multer.File, @Query('productId') productId: string, @Query('host') host: string): Promise<{ taskId: string }> {
     if (!file) {
       throw new Error('No file uploaded');
     }
+
+    if (!productId || !host) {
+      throw new Error('Missing required query parameters: productId or host');
+    }
+
+    const fileSize = file.size;
 
     const processBinaryData = (buffer: Buffer) => {
       try {
@@ -34,11 +43,16 @@ export class AppController {
 
     // 文件必须先经过编码转换
     const processedBuffer = processBinaryData(file.buffer);
-    const uint8 = new Uint8Array(processedBuffer);
-    const taskId = await this.workerService.runInWorker(
-      './workers/occt.worker.js',
-      { data: uint8 },
-    );
+    const decodedFileName = file.originalname;
+    console.log(`文件名称: ${decodedFileName}`);
+    // 写入临时文件
+    const tempFilePath = path.join(os.tmpdir(), decodedFileName);
+    await fs.writeFile(tempFilePath, Buffer.from(processedBuffer));
+    console.log(`文件已写入临时路径: ${tempFilePath}`);
+
+
+
+    const taskId = await this.workerService.runInWorker(productId, host, tempFilePath, fileSize);
     return { taskId };
   }
 
