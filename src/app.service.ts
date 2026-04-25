@@ -55,6 +55,7 @@ export class WorkerService {
       });
       worker.on('error', (error) => {
         this.taskMap.set(taskId, { status: 'completed', result: { error } });
+        console.log(error, "任务失败!");
         console.log('Checking taskId:', taskId);
         console.log('Current taskMap keys:', Array.from(this.taskMap.keys()));
         this.currentRunningTasks--;
@@ -62,6 +63,7 @@ export class WorkerService {
       });
       worker.on('exit', (code) => {
         if (code !== 0) {
+          console.log(code, arguments, "任务失败!");
           this.taskMap.set(taskId, { status: 'completed', result: { error: `Worker stopped with exit code ${code}` } });
           console.log('Checking taskId:', taskId);
           console.log('Current taskMap keys:', Array.from(this.taskMap.keys()));

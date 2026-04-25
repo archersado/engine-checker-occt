@@ -1,18 +1,19 @@
 import { parentPort, workerData } from 'worker_threads';
-import occtImport from 'occt-import-js';
+import { join } from 'path';
+
+const occtPath = join(__dirname, '../occt', 'occt-import-js.js');
+const occtImport = require(occtPath);
 
 (async () => {
   try {
     const occt = await occtImport();
     const { data } = workerData as { data: Uint8Array };
     const result = occt.ReadStepFile(data, {
-      linearDeflection: 0.1,
-      angularDeflection: 0.0175
+      linearDeflection: 0.2,
+      angularDeflection: 0.05,
     });
-    console.log(result)
     parentPort?.postMessage(result);
   } catch (error) {
-    console.log(error)
     parentPort?.postMessage({ error: (error as Error).message });
   }
 })(); 
